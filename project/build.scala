@@ -37,7 +37,11 @@ object TaskomaticBuild extends Build {
         // Additional dependencies
         "org.scalatra" %% "scalatra-json" % "2.2.1",
         "org.json4s"   %% "json4s-jackson" % "3.2.4",
-        "net.debasishg" %% "redisclient" % "2.10"
+        "net.debasishg" %% "redisclient" % "2.10",
+        "com.typesafe.slick" %% "slick" % "1.0.1",
+        "org.slf4j" % "slf4j-nop" % "1.6.4",
+        "com.h2database" % "h2" % "1.3.166",
+        "c3p0" % "c3p0" % "0.9.1.2"
       ),
       scalateTemplateConfig in Compile <<= (sourceDirectory in Compile){ base =>
         Seq(

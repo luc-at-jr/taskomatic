@@ -24,7 +24,6 @@ trait TaskomaticStack extends ScalatraServlet with ScalateSupport {
     super.templateAttributes ++ mutable.Map.empty // Add extra attributes here, they need bindings in the build file
   }
   
-
   notFound {
     // remove content type in case it was set through an action
     contentType = null

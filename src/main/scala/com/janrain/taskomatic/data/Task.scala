@@ -2,26 +2,20 @@ package com.janrain.taskomatic.data
 
 import org.scalatra._
 import com.redis._
-import com.janrain.taskomatic.data._
-import com.janrain.taskomatic.data.JsonSupport
+import com.janrain.taskomatic.data.{ RedisSupport }
 
-case class Task(id: Long, description: String)
+case class Task(id: Int, description: String)
 
-object Task {
-	private val redisHost: String = sys.env.getOrElse("REDIS_HOST", "localhost")
-	private val redisPort: Int = sys.env.getOrElse("REDIS_PORT", 6379).toString.toInt
+object Task extends RedisSupport {
 
-	lazy val client = new RedisClient(redisHost, redisPort)
-	val tasksKey: String = "tasks"
-
-	def fetchAllTasks: Iterable[Task] = {
-		val allTasks = client.hgetall[String, String](tasksKey).getOrElse(Map.empty)
+	def fetchAllTasks = {
+		val allTasks = client.hgetall(tasksKey).getOrElse(Map.empty)
 		for (taskKey <- allTasks.keys) yield {
-			Task(taskKey.toLong, allTasks(taskKey))
+			Task(taskKey.toInt, allTasks(taskKey))
 		}
 	}
 
-	def fetchTaskById(taskId: Long): Option[Task] = {
+	def fetchTaskById(taskId: Int): Option[Task] = {
 		client.hget(tasksKey, taskId).map(description => Task(taskId, description))
 	}
 
@@ -29,15 +23,28 @@ object Task {
 		client.hset(tasksKey, task.id, task.description)
 	}
 
-	def modifyTaskById(taskId: Long, newDescription: String) = {
+	def createNewTaskByDescription(description: String) {
+		val taskId: java.util.UUID = java.util.UUID.randomUUID()
+		client.hset(tasksKey, taskId, description)
+	}
+
+	def modifyTaskById(taskId: Int, newDescription: String) = {
 		client.hset(tasksKey, taskId, newDescription)
 	}
 
-	def deleteTaskById(taskId: Long) = {
+	def deleteTaskById(taskId: Int) = {
 		client.hdel(tasksKey, taskId)
+	}
+
+	def deleteAll = {
+		val allTasks = client.hgetall(tasksKey).getOrElse(Map.empty)
+		for (k <- allTasks.keys) {
+			client.hdel(tasksKey, k)
+		}
 	}
 
 	def getTasksCount: Option[Long] = {
 		client.hlen(tasksKey)
 	}
+
 }

@@ -3,12 +3,12 @@ package com.janrain.taskomatic
 import org.scalatra._
 import org.scalatra.json._
 import org.json4s._
-import scala.util.Random
 import scala.concurrent._
 import scala.concurrent.{ future, promise }
 import ExecutionContext.Implicits.global
 
-import com.janrain.taskomatic.data.{Task, JsonSupport}
+import com.janrain.taskomatic.data.JsonSupport
+import com.janrain.taskomatic.data.Task
 
 class TaskomaticServlet extends TaskomaticStack with JsonSupport with MethodOverride {
 
@@ -19,40 +19,56 @@ class TaskomaticServlet extends TaskomaticStack with JsonSupport with MethodOver
 
   get("/:id") {
     jsonMethod
-  	val taskId: Long = params("id").toLong
+  	val taskId: Int = params("id").toInt
     Task.fetchTaskById(taskId)
   }
 
   post("/") {
     jsonMethod
-    val taskId: Long = new Random().nextInt.abs.toLong
-    val description: String = params("description")
-    val newTask = new Task(taskId, description)
-    Task.createNewTask(newTask)
+    request.getHeader("Content-Type") match {
+      case "application/json" => {
+        val newTask = parsedBody.extract[Task]
+        Task.createNewTask(newTask)
+      }
+      case "application/x-www-form-urlencoded" => {
+        println(request.getHeader("Content-Type"))
+        val description: String = params("description")
+          Task.createNewTaskByDescription(description)
+      }
+      case _ => "Unknown content type"
+    }
+
+    /*if (request.getHeader("Content-Type").contains("application/json")) {
+      val newTask = parsedBody.extract[Task]
+      Task.createNewTask(newTask)
+    } else {
+      val description: String = params("description")
+      Task.createNewTaskByDescription(description)
+    }*/
   }
 
-  post("/json") {
-    jsonMethod
-  	val newTask = parsedBody.extract[Task]
-    Task.createNewTask(newTask)
+  post("/no-json") {
+    val description: String = params("description")
+    Task.createNewTaskByDescription(description)
   }
 
   put("/:id") {
-    jsonMethod
-  	val taskId: Long = params("id").toLong
+  	val taskId: Int = params("id").toInt
     val newTaskDescription = params("description")
     Task.modifyTaskById(taskId, newTaskDescription)
   }
 
   delete("/:id") {
-    jsonMethod
-    val taskId: Long = params("id").toLong
+    val taskId: Int = params("id").toInt
     Task.deleteTaskById(taskId)
+  }
+
+  delete("/all") {
+    Task.deleteAll
   }
 
   get("/count") {
     jsonMethod
-    Map("count" -> Task.getTasksCount)
+    Map("tasks count" -> Task.getTasksCount)
   }
-  
 }
